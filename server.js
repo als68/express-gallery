@@ -1,3 +1,5 @@
+'use strict';
+
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
@@ -10,8 +12,16 @@ const analyticTrack = require('./lib/analytics_track');
 const bcrypt = require('bcrypt');
 const encrypt = require('./lib/encrypt_pw');
 const flash = require('connect-flash');
-const config = require('./config/config.json');
 const User = db.User;
+var config;
+
+if ( process.env.NODE_ENV == 'production' ) {
+  config = {
+    'secret': process.env.SECRET
+  };
+} else {
+  config = require('./config/config.json');
+}
 
 /*==========================
 ==========JADE SET==========*/
@@ -32,7 +42,7 @@ app.use(session({ secret: config.secret }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
-/*app.use(analyticTrack);*/
+// app.use(analyticTrack);
 app.use('/gallery', gallery);
 
 
@@ -41,7 +51,7 @@ passport.use(new LocalStrategy(
     User.findOne({ where: { username: username }
 
     }).then ((data) => {
-      let passHash;
+      var passHash;
       bcrypt.compare(password, data.dataValues.password, (err, res) => {
 
         passHash = res;
@@ -101,9 +111,16 @@ app.get('/logout', (req, res)=> {
 
 /*=====  End of Section comment block  ======*/
 
-const server = app.listen(3000, () => {
+
+let port = process.env.PORT || 3000;
+
+app.listen(port, function() {
   db.sequelize.sync();
-  console.log('listening on port 3000');
 });
+
+// const server = app.listen(3000, () => {
+//   db.sequelize.sync();
+//   console.log('listening on port 3000');
+// });
 
 module.exports = isAuthenticated;
